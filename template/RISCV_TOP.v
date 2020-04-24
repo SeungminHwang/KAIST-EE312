@@ -129,7 +129,7 @@ module RISCV_TOP (
 
 	assign immI = {I_MEM_DI[31], offset19, I_MEM_DI[31], I_MEM_DI[30:25], I_MEM_DI[24:21], I_MEM_DI[20]};
 	assign immS = {I_MEM_DI[31], offset19,I_MEM_DI[31], I_MEM_DI[30:25], I_MEM_DI[11:8], I_MEM_DI[7]};
-	assign immB = {offset19, I_MEM_DI[31], I_MEM_DI[7], I_MEM_DI[30:25], I_MEM_DI[11:8]};
+	assign immB = {offset19, I_MEM_DI[31], I_MEM_DI[7], I_MEM_DI[30:25], I_MEM_DI[11:8], 1'b0};
 	assign immU = {I_MEM_DI[31], I_MEM_DI[30:20], I_MEM_DI[19:12], 12'b000000000000};
 	assign immJ = {offset11, I_MEM_DI[31], I_MEM_DI[19:12], I_MEM_DI[20], I_MEM_DI[30:25], I_MEM_DI[24:21], 1'b0};
 
@@ -156,15 +156,16 @@ module RISCV_TOP (
 	// make immediate filed
 	assign imm = immField;
 	always @ (*) begin
-		//$display("INST: ", I_MEM_DI);
-		//$display("WD: ", RF_WD);
-		//$display("op1: ", oprnd1);
-		//$display("op2: ", oprnd2);
+		//$display("INST: %x", I_MEM_DI);
+		//$display("rs1: ", rs1);
+		//$display("rd: ", rd);
+		$display("op1: ", oprnd1);
+		$display("op2: ", oprnd2);
 		//$display("res: ", imm);
 		//$display("funct3: ", funct7);
 		//$display("rd: ", rd);
 		//$display("res: ", result);
-		//$display("PC: ", RSTn);
+		$display("Instr: %x", I_MEM_DI);
 		//$display("regMemoutput", regWD);
 		
 		
@@ -273,7 +274,6 @@ module RISCV_TOP (
 		end
 		
 		if(sigOpIMM) begin // OP IMM
-			$display("imm:", imm);
 			case(funct3)
 				3'b000: begin
 					result = oprnd1 + imm;
@@ -321,23 +321,22 @@ module RISCV_TOP (
 
 	//jump!
 	
-	assign bcond = ~result;
+	assign bcond = result;
 	always @ (*) begin
-		$display("PC: ",PC);
 		if(sigJAL) begin
-			temp = ((imm<<1) + PC);
+			temp = imm + PC;//((imm<<1) + PC);
 			jmpPC = temp[11:0];
 			result = PC + 4;//modi
 		end
 		if(sigJALR) begin
 			temp = oprnd1 + imm;
 			temp = temp & (-2);
-			temp = (temp<<1) + PC;
+			temp = temp + PC;//(temp<<1) + PC;
 			jmpPC = temp[11:0];
 		end
 
 		if(sigBRANCH & bcond) begin
-			temp = ((imm<<1) + PC);
+			temp = imm + PC;//((imm<<1) + PC);
 			jmpPC = temp[11:0];
 		end
 	end
