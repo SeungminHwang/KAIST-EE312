@@ -131,7 +131,7 @@ module RISCV_TOP (
 	assign immS = {I_MEM_DI[31], offset19,I_MEM_DI[31], I_MEM_DI[30:25], I_MEM_DI[11:8], I_MEM_DI[7]};
 	assign immB = {offset19, I_MEM_DI[31], I_MEM_DI[7], I_MEM_DI[30:25], I_MEM_DI[11:8]};
 	assign immU = {I_MEM_DI[31], I_MEM_DI[30:20], I_MEM_DI[19:12], 12'b000000000000};
-	assign immJ = {I_MEM_DI[31], I_MEM_DI[19:12], I_MEM_DI[20], I_MEM_DI[30:25], I_MEM_DI[24:21]};
+	assign immJ = {offset11, I_MEM_DI[31], I_MEM_DI[19:12], I_MEM_DI[20], I_MEM_DI[30:25], I_MEM_DI[24:21], 1'b0};
 
 
 	//Control signals
@@ -273,6 +273,7 @@ module RISCV_TOP (
 		end
 		
 		if(sigOpIMM) begin // OP IMM
+			$display("imm:", imm);
 			case(funct3)
 				3'b000: begin
 					result = oprnd1 + imm;
@@ -322,10 +323,11 @@ module RISCV_TOP (
 	
 	assign bcond = ~result;
 	always @ (*) begin
+		$display("PC: ",PC);
 		if(sigJAL) begin
 			temp = ((imm<<1) + PC);
 			jmpPC = temp[11:0];
-			//result = 0;
+			result = PC + 4;//modi
 		end
 		if(sigJALR) begin
 			temp = oprnd1 + imm;
