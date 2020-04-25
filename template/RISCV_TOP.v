@@ -92,6 +92,10 @@ module RISCV_TOP (
 	reg [31:0] regWD;
 
 
+	//trash bin
+	//reg [31:0] value;
+
+
 	assign I_MEM_CSN = ~RSTn;
 
 	
@@ -147,7 +151,7 @@ module RISCV_TOP (
 	assign sigLOAD =  (opcode == 7'b0000011); // I type
 	assign sigSTORE =  (opcode == 7'b0100011); // S type
 
-	assign sigALUSrc =  (sigOP) & (sigBRANCH); // 1 for "use RF_RD1" 0 for immediate
+	assign sigALUSrc =  (sigOP) | (sigBRANCH); // 1 for "use RF_RD1" 0 for immediate
 	assign sigMemToReg =  sigLOAD;
 	
 
@@ -156,17 +160,21 @@ module RISCV_TOP (
 	// make immediate filed
 	assign imm = immField;
 	always @ (*) begin
-		//$display("INST: %x", I_MEM_DI);
+		$display("INST: %x", I_MEM_DI);
 		//$display("rs1: ", rs1);
 		//$display("rd: ", rd);
-		$display("op1: ", oprnd1);
-		$display("op2: ", oprnd2);
+		//$display("op1: ", oprnd1);
+		//$display("op2: ", oprnd2);
 		//$display("res: ", imm);
 		//$display("funct3: ", funct7);
 		//$display("rd: ", rd);
 		//$display("res: ", result);
-		$display("Instr: %x", I_MEM_DI);
+		//$display("Instr: %x", I_MEM_DI);
 		//$display("regMemoutput", regWD);
+		//$display("D_MEM_DI: ", D_MEM_DI[7]);
+		//$display("reg: ", {24'b111111111111111111111111, D_MEM_DI});
+		//$display("funct3: ", funct3);
+		//$display("regMemOutput: %x", regMemOutput);
 		
 		
 		if(sigOpIMM | sigJALR | sigLOAD) begin // isItype
@@ -263,6 +271,7 @@ module RISCV_TOP (
 				end
 				3'b101: begin // BGE
 					result = ($signed(oprnd1) >= $signed(oprnd2));
+					//$display("bcond: %x, oprnd1: %x, oprnd2: %x", bcond, oprnd1, RF_RD2);
 				end
 				3'b110: begin // BLTU
 					result = (oprnd1 < oprnd2);
@@ -286,6 +295,9 @@ module RISCV_TOP (
 				end
 				3'b011: begin // SLTU
 					result = oprnd1 < imm;
+					if(rs1 == 1'b0) begin
+						result = (oprnd2 != 0);	// SLTU rd, x0, rs2 == 1 if rs2!=0
+					end
 				end
 				3'b100: begin // XOR
 					result = oprnd1 ^ imm;
@@ -317,6 +329,7 @@ module RISCV_TOP (
 		if(sigAUIPC) begin
 			result = PC + oprnd2; //imm
 		end
+
 	end
 
 	//jump!
@@ -341,7 +354,6 @@ module RISCV_TOP (
 		end
 	end
 
-
 	//mem control
 	//wire [11:0] effectiveAddr = assign result & 12'hFFF;
 	assign D_MEM_CSN = ~RSTn;
@@ -364,36 +376,35 @@ module RISCV_TOP (
 			end
 		endcase
 	end
+	
+	
+	
 	//mem input sign extending
-
+	//D_MEM_DI;
 	always @ (*) begin
-		case(funct3)
-			3'b100: begin //LBU 8
-				regMemOutput = D_MEM_DI;
-			end
-			3'b101: begin //*LHU 16
-				regMemOutput = D_MEM_DI;
-			end
-			3'b000: begin //*B 8
-				if(D_MEM_DI[7] == 1) begin
-					regMemOutput = {24'b111111111111111111111111, D_MEM_DI};
+		if(sigLOAD) begin
+			regMemOutput = D_MEM_DI;
+			if(funct3 == 3'b000) begin // lb
+				//regMemOutput = regMemOutput[7:0];// & 8'hFF;
+				if(regMemOutput[7] == 1'b1) begin
+					//$display("Oh no!");
+					regMemOutput = {24'b111111111111111111111111, regMemOutput[7:0]};
 				end
 				else begin
-				  regMemOutput = D_MEM_DI;
+					//$display("Oh yeah!");
+					regMemOutput = {24'b0, regMemOutput[7:0]};
 				end
 			end
-			3'b001: begin //*H 16
-				if(D_MEM_DI[15] == 1) begin
-					regMemOutput = {16'b1111111111111111, D_MEM_DI};
+			if(funct3 == 3'b010) begin // lh
+				regMemOutput = regMemOutput & 16'hFFFF;
+				if(regMemOutput[15] == 1'b1) begin
+					regMemOutput = {16'b1111111111111111, regMemOutput[15:0]};
 				end
 				else begin
-				  regMemOutput = D_MEM_DI;
+					regMemOutput = {16'b0, regMemOutput[15:0]};
 				end
 			end
-			3'b010: begin //*W 32
-				regMemOutput = D_MEM_DI;
-			end
-		endcase
+		end
 	end
 
 
