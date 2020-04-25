@@ -102,14 +102,7 @@ module RISCV_TOP (
 	initial begin
 		PC = 0;
 	end
-	always @ (*) begin
-		if(sigJAL | sigJALR | (sigBRANCH & bcond)) begin
-			nextPC = jmpPC;
-		end
-		else begin
-			nextPC = PC + 4;
-		end
-	end
+	
 
 	always @(posedge CLK) begin
 		if (RSTn) begin
@@ -161,22 +154,7 @@ module RISCV_TOP (
 	assign imm = immField;
 	always @ (*) begin
 		$display("INST: %x", I_MEM_DI);
-		//$display("rs1: ", rs1);
-		//$display("rd: ", rd);
-		//$display("op1: ", oprnd1);
-		//$display("op2: ", oprnd2);
-		//$display("res: ", imm);
-		//$display("funct3: ", funct7);
-		//$display("rd: ", rd);
-		//$display("res: ", result);
-		//$display("Instr: %x", I_MEM_DI);
-		//$display("regMemoutput", regWD);
-		//$display("D_MEM_DI: ", D_MEM_DI[7]);
-		//$display("reg: ", {24'b111111111111111111111111, D_MEM_DI});
-		//$display("funct3: ", funct3);
-		//$display("regMemOutput: %x", regMemOutput);
-		
-		
+
 		if(sigOpIMM | sigJALR | sigLOAD) begin // isItype
 			immField = immI;
 		end
@@ -203,7 +181,12 @@ module RISCV_TOP (
 	assign RF_WA1 = rd;
 	
 	assign HALT = regHALT;
-
+	always @ (*) begin
+		//HALT
+		if((I_MEM_DI == 32'h00008067) & (RF_RD1 == 32'h0000000c)) begin
+			regHALT = 1;
+		end
+	end
 
 	// ALU
 	//// ALU control
@@ -214,10 +197,7 @@ module RISCV_TOP (
 			oprnd2 = imm;
 		end
 
-		//HALT
-		if((I_MEM_DI == 32'h00008067) & (RF_RD1 == 32'h0000000c)) begin
-			regHALT = 1;		  
-		end
+		
 
 		if(sigOP) begin// | sigOpIMM) begin //R-type ALU
 			case(funct3)
@@ -330,22 +310,16 @@ module RISCV_TOP (
 			result = PC + oprnd2; //imm
 		end
 
-	end
-
-	//jump!
-	
-	assign bcond = result;
-	always @ (*) begin
+		//////check
 		if(sigJAL) begin
-			temp = imm + PC;//((imm<<1) + PC);
-			jmpPC = temp[11:0];
+			//temp = imm + PC;//((imm<<1) + PC);
+			jmpPC = (imm + PC)&12'hFFF;
 			result = PC + 4;//modi
+			//$display("PC: ", PC, I_MEM_DI);
 		end
 		if(sigJALR) begin
-			temp = oprnd1 + imm;
-			temp = temp & (-2);
-			temp = temp + PC;//(temp<<1) + PC;
-			jmpPC = temp[11:0];
+			result = ((oprnd1 + imm)>>1)<<1;
+			jmpPC = RF_RD1&12'hFFF;
 		end
 
 		if(sigBRANCH & bcond) begin
@@ -353,6 +327,13 @@ module RISCV_TOP (
 			jmpPC = temp[11:0];
 		end
 	end
+
+	//jump!
+	
+	assign bcond = result;
+	//always @ (*) begin
+		
+	//end
 
 	//mem control
 	//wire [11:0] effectiveAddr = assign result & 12'hFFF;
@@ -388,20 +369,20 @@ module RISCV_TOP (
 				//regMemOutput = regMemOutput[7:0];// & 8'hFF;
 				if(regMemOutput[7] == 1'b1) begin
 					//$display("Oh no!");
-					regMemOutput = {24'b111111111111111111111111, regMemOutput[7:0]};
+					regMemOutput = {24'b111111111111111111111111, D_MEM_DI[7:0]};
 				end
 				else begin
 					//$display("Oh yeah!");
-					regMemOutput = {24'b0, regMemOutput[7:0]};
+					regMemOutput = {24'b0, D_MEM_DI[7:0]};
 				end
 			end
 			if(funct3 == 3'b010) begin // lh
-				regMemOutput = regMemOutput & 16'hFFFF;
+				regMemOutput = D_MEM_DI & 16'hFFFF;
 				if(regMemOutput[15] == 1'b1) begin
-					regMemOutput = {16'b1111111111111111, regMemOutput[15:0]};
+					regMemOutput = {16'b1111111111111111, D_MEM_DI[15:0]};
 				end
 				else begin
-					regMemOutput = {16'b0, regMemOutput[15:0]};
+					regMemOutput = {16'b0, D_MEM_DI[15:0]};
 				end
 			end
 		end
@@ -412,11 +393,26 @@ module RISCV_TOP (
 	
 	assign RF_WD = regWD;
 	always @ (*) begin
+		if(~CLK)begin
 		if(sigMemToReg) begin
 			regWD = regMemOutput;
 		end
+		else if (sigJAL) begin
+			//$display("yeah : ", PC + 4);
+			regWD = PC + 4;
+		end
 		else begin
 			regWD = result;
+		end
+		end
+	end
+
+	always @ (*) begin
+		if(sigJAL | sigJALR | (sigBRANCH & bcond)) begin
+			nextPC = jmpPC;
+		end
+		else begin
+			nextPC = PC + 4;
 		end
 	end
 
