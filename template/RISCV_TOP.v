@@ -153,7 +153,7 @@ module RISCV_TOP (
 	// make immediate filed
 	assign imm = immField;
 	always @ (*) begin
-		$display("INST: %x", I_MEM_DI);
+		//$display("INST: %x", I_MEM_DI);
 
 		if(sigOpIMM | sigJALR | sigLOAD) begin // isItype
 			immField = immI;
@@ -393,7 +393,7 @@ module RISCV_TOP (
 	
 	assign RF_WD = regWD;
 	always @ (*) begin
-		if(~CLK)begin
+		//if(~CLK)begin
 		if(sigMemToReg) begin
 			regWD = regMemOutput;
 		end
@@ -404,7 +404,7 @@ module RISCV_TOP (
 		else begin
 			regWD = result;
 		end
-		end
+		//end
 	end
 
 	always @ (*) begin
