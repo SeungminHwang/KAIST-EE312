@@ -368,12 +368,10 @@ module RISCV_TOP (
 			if(funct3 == 3'b000) begin // lb
 				//regMemOutput = regMemOutput[7:0];// & 8'hFF;
 				if(regMemOutput[7] == 1'b1) begin
-					//$display("Oh no!");
 					regMemOutput = {24'b111111111111111111111111, D_MEM_DI[7:0]};
 				end
 				else begin
-					//$display("Oh yeah!");
-					regMemOutput = {24'b0, D_MEM_DI[7:0]};
+					regMemOutput = D_MEM_DI&8'hFF;//{24'b0, D_MEM_DI[7:0]};
 				end
 			end
 			if(funct3 == 3'b010) begin // lh
@@ -385,6 +383,12 @@ module RISCV_TOP (
 					regMemOutput = {16'b0, D_MEM_DI[15:0]};
 				end
 			end
+			if(funct3 == 3'b100) begin // lbu
+				regMemOutput = D_MEM_DI& 8'hFF;
+			end
+			if(funct3 == 3'b101) begin //lhu
+				regMemOutput = D_MEM_DI & 16'hFFFF;
+			end
 		end
 	end
 
@@ -393,7 +397,6 @@ module RISCV_TOP (
 	
 	assign RF_WD = regWD;
 	always @ (*) begin
-		//if(~CLK)begin
 		if(sigMemToReg) begin
 			regWD = regMemOutput;
 		end
@@ -404,7 +407,6 @@ module RISCV_TOP (
 		else begin
 			regWD = result;
 		end
-		//end
 	end
 
 	always @ (*) begin

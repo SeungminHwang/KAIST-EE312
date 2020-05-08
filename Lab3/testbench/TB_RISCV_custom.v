@@ -144,7 +144,7 @@ module TB_RISCV ();
 		TestID[3] <= "4";		TestNumInst[3] <= 16'h0004;		TestAns[3] <= 16'h02dd;		TestPassed[3] <= 1'b0; //addi
 		TestID[4] <= "5";		TestNumInst[4] <= 16'h0007;		TestAns[4] <= 16'h02cc;		TestPassed[4] <= 1'b0; //lw
 		TestID[5] <= "6";		TestNumInst[5] <= 16'h0008;		TestAns[5] <= 32'hffffffcc;		TestPassed[5] <= 1'b0; //lb
-		TestID[6] <= "7";		TestNumInst[6] <= 16'h0009;		TestAns[6] <= 16'h00cc;		TestPassed[6] <= 1'b0; //lbu
+		TestID[6] <= "7";		TestNumInst[6] <= 16'h0009;		TestAns[6] <= 16'h00cc;		TestPassed[6] <= 1'b0; //lw
 		TestID[7] <= "8";		TestNumInst[7] <= 16'h000a;		TestAns[7] <= 32'haa024;		TestPassed[7] <= 1'b0; //auipc
 		TestID[8] <= "9";		TestNumInst[8] <= 16'h000b;		TestAns[8] <= 32'hbb000;		TestPassed[8] <= 1'b0; //lui
 	end
