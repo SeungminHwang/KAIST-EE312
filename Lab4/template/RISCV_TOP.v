@@ -112,6 +112,9 @@ module RISCV_TOP (
 				PC <= nextPC;
 				I_MEM_ADDR <= nextPC;
 			end
+			else begin
+			  	I_MEM_ADDR <= PC;
+			end
 			stage <= nextStage; // just one stage is done.
 		end
 		else begin
@@ -126,7 +129,7 @@ module RISCV_TOP (
 	assign OUTPUT_PORT = RF_WD;
 
 	//micro control unit
-	STAGECTRL STAGECTRL(.currentStage(stage), .opcode(IR[6:0]), .nextStage(nextStage), .PVSWriteEn(PVSWriteEn));
+	STAGECTRL STAGECTRL(.currentStage(stage), .opcode(I_MEM_ADDR[6:0]), .nextStage(nextStage), .PVSWriteEn(PVSWriteEn));
 
 
 	//IF
@@ -140,7 +143,7 @@ module RISCV_TOP (
 
 	//ID
 	wire isID = (stage == 3'b001);
-	INST_DECODE INST_DECODE(.INST(IR), .activate(isID), .opcode(opcode), .rs1(rs1), .rs2(rs2), .rd(rd), .funct3(funct3), .funct7(funct7), .immI(immI), .immS(immS), .immB(immB), .immU(immU), .immJ(immJ), .sigOpIMM(sigOpIMM), .sigOP(sigOP), .sigJAL(sigJAL), .sigJALR(sigJALR), .sigBRANCH(sigBRANCH), .sigLOAD(sigLOAD), .sigSTORE(sigSTORE), .sigALUSrc(sigALUSrc), .sigMemToReg(sigMemToReg), .RF_WE(RF_WE), .RF_RA1(RF_RA1), .RF_RA2(RF_RA2), .RF_WA1(RF_WA1), .RF_RD1(RF_RD1), .RF_RD2(RF_RD2), .oprnd2(oprnd2), .HALT(HALT));
+	INST_DECODE INST_DECODE(.INST(I_MEM_DI), .activate(isID), .opcode(opcode), .rs1(rs1), .rs2(rs2), .rd(rd), .funct3(funct3), .funct7(funct7), .immI(immI), .immS(immS), .immB(immB), .immU(immU), .immJ(immJ), .sigOpIMM(sigOpIMM), .sigOP(sigOP), .sigJAL(sigJAL), .sigJALR(sigJALR), .sigBRANCH(sigBRANCH), .sigLOAD(sigLOAD), .sigSTORE(sigSTORE), .sigALUSrc(sigALUSrc), .sigMemToReg(sigMemToReg), .RF_WE(RF_WE), .RF_RA1(RF_RA1), .RF_RA2(RF_RA2), .RF_WA1(RF_WA1), .RF_RD1(RF_RD1), .RF_RD2(RF_RD2), .oprnd2(oprnd2), .HALT(HALT));
 
 
 	//Ex

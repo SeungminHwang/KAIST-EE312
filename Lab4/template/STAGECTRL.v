@@ -18,7 +18,7 @@ assign PVSWriteEn = allowPVS;
 assign nextStage = newStage;
 
 always @ (*) begin
-    $display("current stage: ", currentStage);
+    $display("current stage: ", currentStage, opcode);
     case(currentStage)
         3'b000: begin // IF
             newStage = 3'b001;
