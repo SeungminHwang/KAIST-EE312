@@ -7,15 +7,17 @@ module ALU (
     output wire [31:0] res
     );
 
-    reg result;
+    reg [31:0] result;
     assign res = result;
     always @ (*) begin
+        $display("op: ", op, oprnd1, oprnd2);
         if(activate) begin
-            $display("oprnd2: ", oprnd2);
+            //$display("oprnd1, 2: ", oprnd1, oprnd2, subop);
             case(op)
                 3'b000: begin // add or sub
                     if(subop == 7'b0000000) result = oprnd1 + oprnd2; //ADD
                     if(subop == 7'b0100000) result = oprnd1 - oprnd2; //SUB
+                    //$display("result, ", result);
                 end
                 3'b001: begin // SLL
                     result = oprnd1 << oprnd2[4:0];

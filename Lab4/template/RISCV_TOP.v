@@ -108,6 +108,7 @@ module RISCV_TOP (
 
 	always @ (posedge CLK) begin
 		if (RSTn) begin
+			//$display("nextInstr, PC: ", stage, PC);
 			if(PVSWriteEn) begin // if all stage are done
 				PC <= nextPC;
 				I_MEM_ADDR <= nextPC;
@@ -119,6 +120,7 @@ module RISCV_TOP (
 		end
 		else begin
 			I_MEM_ADDR <= PC;
+			//$display("IMEMADDR, stage: ",I_MEM_ADDR, stage, IR);
 		end
 	end
 
@@ -129,13 +131,14 @@ module RISCV_TOP (
 	assign OUTPUT_PORT = RF_WD;
 
 	//micro control unit
-	STAGECTRL STAGECTRL(.currentStage(stage), .opcode(I_MEM_ADDR[6:0]), .nextStage(nextStage), .PVSWriteEn(PVSWriteEn));
+	//wire [6:0] temp1 = I_MEM_ADDR[6:0];
+	STAGECTRL STAGECTRL(.currentStage(stage), .opcode(opcode), .nextStage(nextStage), .PVSWriteEn(PVSWriteEn));
 
 
 	//IF
 	always @ (*) begin
 		if(stage == 3'b000) begin //only for IF
-			$display("PC: ",I_MEM_ADDR);
+			//$display("RSTn: ",RSTn);
 			//I_MEM_ADDR = PC;
 			IR = I_MEM_DI;
 		end
@@ -143,13 +146,13 @@ module RISCV_TOP (
 
 	//ID
 	wire isID = (stage == 3'b001);
-	INST_DECODE INST_DECODE(.INST(I_MEM_DI), .activate(isID), .opcode(opcode), .rs1(rs1), .rs2(rs2), .rd(rd), .funct3(funct3), .funct7(funct7), .immI(immI), .immS(immS), .immB(immB), .immU(immU), .immJ(immJ), .sigOpIMM(sigOpIMM), .sigOP(sigOP), .sigJAL(sigJAL), .sigJALR(sigJALR), .sigBRANCH(sigBRANCH), .sigLOAD(sigLOAD), .sigSTORE(sigSTORE), .sigALUSrc(sigALUSrc), .sigMemToReg(sigMemToReg), .RF_WE(RF_WE), .RF_RA1(RF_RA1), .RF_RA2(RF_RA2), .RF_WA1(RF_WA1), .RF_RD1(RF_RD1), .RF_RD2(RF_RD2), .oprnd2(oprnd2), .HALT(HALT));
+	INST_DECODE INST_DECODE(.INST(I_MEM_DI), .activate(isID), .opcode(opcode), .rs1(rs1), .rs2(rs2), .rd(rd), .funct3(funct3), .funct7(funct7), .immI(immI), .immS(immS), .immB(immB), .immU(immU), .immJ(immJ), .sigOpIMM(sigOpIMM), .sigOP(sigOP), .sigJAL(sigJAL), .sigJALR(sigJALR), .sigBRANCH(sigBRANCH), .sigLOAD(sigLOAD), .sigSTORE(sigSTORE), .sigALUSrc(sigALUSrc), .sigMemToReg(sigMemToReg), .RF_WE(RF_WE), .RF_RA1(RF_RA1), .RF_RA2(RF_RA2), .RF_WA1(RF_WA1), .RF_RD1(RF_RD1), .RF_RD2(RF_RD2), .oprnd2(oprnd2), .HALT(HALT), .writeEn(PVSWriteEn));
 
 
 	//Ex
 	//ALU for OP and OPIMM
 	//fix activate, oprnd2
-	wire isALU = sigOP| sigOpIMM;
+	wire isALU = (stage == 3'b010);// &(sigOP| sigOpIMM);
 	ALU ALU(.activate(isALU), .op(funct3), .subop(funct7), .oprnd1(RF_RD1), .oprnd2(oprnd2), .res(result));
 	
 
@@ -209,6 +212,7 @@ module RISCV_TOP (
 	assign RF_WD = regWD;
 	always @ (*) begin
 	  	if(stage == 3'b100) begin //only for WB
+		  	nextPC = PC + 4;
 			if(sigMemToReg) begin
 			  	regWD = regMemOutput;
 			end
@@ -219,6 +223,8 @@ module RISCV_TOP (
 			  	regWD = result;
 			end
 		end
+		//$display(regWD);
+		//$display("stage, INST, nPC: ", stage, I_MEM_DI, nextPC, RSTn);
 	end
 
 

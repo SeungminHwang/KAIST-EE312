@@ -37,7 +37,9 @@ module INST_DECODE(
 	//output wire [31:0] RF_WD, // Write Data
     output wire [31:0] oprnd2,
 
-    output wire HALT
+    output wire HALT,
+
+    input wire writeEn
 
     );
 
@@ -45,17 +47,17 @@ module INST_DECODE(
 
 
 
-    reg reg_opcode;
-    reg reg_rs1;
-    reg reg_rs2;
-    reg reg_rd;
-    reg reg_funct3;
-    reg reg_funct7;
-    reg reg_immI;
-    reg reg_immS;
-    reg reg_immB;
-    reg reg_immJ;
-    reg reg_immU;
+    reg [6:0] reg_opcode;
+    reg [4:0] reg_rs1;
+    reg [4:0] reg_rs2;
+    reg [4:0] reg_rd;
+    reg [2:0] reg_funct3;
+    reg [6:0] reg_funct7;
+    reg [31:0] reg_immI;
+    reg [31:0] reg_immS;
+    reg [31:0] reg_immB;
+    reg [31:0] reg_immJ;
+    reg [31:0] reg_immU;
     reg reg_sigOpIMM;
     reg reg_sigOP;
     reg reg_sigJAL;
@@ -66,10 +68,10 @@ module INST_DECODE(
     reg reg_sigALUSrc;
     reg reg_sigMemToReg;
     reg reg_RF_WE;
-    reg reg_RF_RA1;
-    reg reg_RF_RA2;
-    reg reg_RF_WA1;
-    reg reg_oprnd2;
+    reg [4:0] reg_RF_RA1;
+    reg [4:0] reg_RF_RA2;
+    reg [4:0] reg_RF_WA1;
+    reg [31:0] reg_oprnd2;
 
 
     assign opcode = reg_opcode;
@@ -102,13 +104,17 @@ module INST_DECODE(
     //fix
     always @ (*) begin
         if(activate) begin
-            $display("isID Yeah!");
+            //$display("isID Yeah!");
             reg_opcode = INST[6:0];
             reg_rs1 = INST[19:15];
             reg_rs2 = INST[24:20];
             reg_rd = INST[11:7];
             reg_funct3 = INST[14:12];
             reg_funct7 = INST[31:25];
+
+            reg_RF_RA1 = rs1;
+            reg_RF_RA2 = rs2;
+            reg_RF_WA1 = rd;
 
             if(INST[31] == 1'b1) begin
                 reg_immI = {21'b111111111111111111111, INST[30:25], INST[24:21], INST[20]};
@@ -139,10 +145,8 @@ module INST_DECODE(
             reg_sigALUSrc =  (sigOP) | (sigBRANCH); // 1 for "use RF_RD1" 0 for immediate
             reg_sigMemToReg =  sigLOAD;
 
-            reg_RF_WE = ((sigJAL) | (sigJALR) | (sigLOAD) | (sigOP) | (sigOpIMM));
-            reg_RF_RA1 = rs1;
-            reg_RF_RA2 = rs2;
-            reg_RF_WA1 = rd;
+            reg_RF_WE = ((sigJAL) | (sigJALR) | (sigLOAD) | (sigOP) | (sigOpIMM));//&writeEn;
+            
 
             //$display("isID Yeah!");
             //HALT
@@ -151,11 +155,11 @@ module INST_DECODE(
             end
 
             //mk oprnd2
-            $display("op, opimm", sigOP, sigOpIMM, INST);
+            //$display("op, opimm", sigOP, sigOpIMM, INST, opcode);
             if(reg_sigOP) reg_oprnd2 = RF_RD2;
             else if(reg_sigOpIMM) reg_oprnd2 = immI;
 
-            $display("oprnd2: ", oprnd2);
+            //$display("oprnd2: ", oprnd2);
 
         end
     end
