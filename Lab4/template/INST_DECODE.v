@@ -76,7 +76,6 @@ module INST_DECODE(
     reg [31:0] reg_oprnd1;
 
 
-
     assign opcode = reg_opcode;
     assign rs1 = reg_rs1;
     assign rs2 = reg_rs2;
@@ -102,6 +101,7 @@ module INST_DECODE(
     assign RF_RA2 = reg_RF_RA2;
     assign RF_WA1 = reg_RF_WA1;
     assign oprnd2 = reg_oprnd2;
+
     assign oprnd1 = reg_oprnd1;
 
     assign HALT = regHALT;
@@ -109,7 +109,6 @@ module INST_DECODE(
 
     //fix
     always @ (*) begin
-        $display("I_MEM_DI: %x", INST);
         if(activate) begin
             //$display("isID Yeah!");
             reg_opcode = INST[6:0];
@@ -165,6 +164,7 @@ module INST_DECODE(
             //$display("op, opimm", sigOP, sigOpIMM, INST, opcode);
             if(reg_sigOP) reg_oprnd2 = RF_RD2;
             else if(reg_sigOpIMM) reg_oprnd2 = immI;
+
             reg_oprnd1 = RF_RD1;
 
             //$display("oprnd2: ", oprnd2);

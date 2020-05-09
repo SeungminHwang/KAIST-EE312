@@ -32,7 +32,6 @@ always @ (*) begin
             if (opcode == 7'b0110011 | opcode == 7'b0010011) begin // OP(Rtype) and OPIMM(Itype)
                 newStage = 3'b100; // goto WB
                 allowPVS = 0;
-                //$display("yes EX and goto WB");
             end
             else if (opcode == 7'b0000011 | opcode == 7'b0100011) begin // LW or SW 
                 newStage = 3'b011; //goto MEM

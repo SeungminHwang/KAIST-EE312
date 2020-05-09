@@ -89,7 +89,7 @@ module RISCV_TOP (
 	reg [31:0] regMemOutput;
 	reg [31:0] regWD;
 
-	reg [31:0] res;
+	reg [31:0] reg_result;
 
 
 
@@ -110,7 +110,7 @@ module RISCV_TOP (
 
 	always @ (posedge CLK) begin
 		if (RSTn) begin
-			$display("STAGE%d-%d", NUM_INST + 1, stage);
+			//$display("nextInstr, PC: ", stage, PC);
 			if(PVSWriteEn) begin // if all stage are done
 				PC <= nextPC;
 				I_MEM_ADDR <= nextPC;
@@ -140,6 +140,7 @@ module RISCV_TOP (
 	//IF
 	always @ (*) begin
 		if(stage == 3'b000) begin //only for IF
+			//$display("RSTn: ",RSTn);
 			//I_MEM_ADDR = PC;
 			IR = I_MEM_DI;
 		end
@@ -153,60 +154,46 @@ module RISCV_TOP (
 	//Ex
 	//ALU for OP and OPIMM
 	//fix activate, oprnd2
-	//remove rs1, rs2
 	wire isALU = (stage == 3'b010);// &(sigOP| sigOpIMM);
-	ALU ALU(.activate(isALU), .op(funct3), .subop(funct7), .oprnd1(oprnd1), .oprnd2(oprnd2), .res(result), .rs1(rs1), .rs2(rs2), .rd(rd));
+	ALU ALU(.activate(isALU), .op(funct3), .subop(funct7), .oprnd1(oprnd1), .oprnd2(oprnd2), .res(result));
 	
 
 	//deal with branch and jump
-	always @ (*) begin // Branch
-		if(stage == 3'b010 & sigBRANCH) begin
-		  	case(funct3)
-				3'b000: begin // BEQ
-					res = (oprnd1 == oprnd2);
-				end
-				3'b010: begin // BNE
-					res = (oprnd1 != oprnd2);
-				end
-				3'b100: begin // BLT
-					res = ($signed(oprnd1) < $signed(oprnd2));
-				end
-				3'b101: begin // BGE
-					res = ($signed(oprnd1) >= $signed(oprnd2));
-					//$display("bcond: %x, oprnd1: %x, oprnd2: %x", bcond, oprnd1, RF_RD2);
-				end
-				3'b110: begin // BLTU
-					res = (oprnd1 < oprnd2);
-				end
-				3'b111: begin // BGEU
-					res = (oprnd1 >= oprnd2);
-				end
-			endcase
-		end
-
-		//store and load
-		if(stage == 3'b010 & (sigLOAD | sigSTORE)) begin
-		  	res = oprnd1 + imm;
-		end
-
-		if(stage == 3'b010 &sigJAL) begin
-			jmpPC = (imm + PC)&12'hFFF;
-			res = PC + 4;//modi
-		end
-		if(stage == 3'b010 &sigJALR) begin
-			res = ((oprnd1 + imm)>>1)<<1;
-			jmpPC = RF_RD1&12'hFFF;
-		end
-
-		if(stage == 3'b010 &sigBRANCH & bcond) begin
-			temp = imm + PC;//((imm<<1) + PC);
-			jmpPC = temp[11:0];
-		end
-
-	end
-	assign result = res;
 	assign bcond = result;
+	always @ (*) begin // branch
+		if(stage == 3'b010) begin // only for EX stage
+			if(sigBRANCH) begin // branch
+				case(funct3)
+					3'b000: reg_result = (oprnd1 == oprnd2);//BEQ
+					3'b010: reg_result = (oprnd1 != oprnd2);//BNE
+					3'b100: reg_result = ($signed(oprnd1) < $signed(oprnd2));//BLT
+					3'b101: reg_result = ($signed(oprnd1) >= $signed(oprnd2));//BGE
+					3'b110: reg_result = (oprnd1 < oprnd2);
+					3'b111: reg_result = (oprnd1 >= oprnd2);
+				endcase
+			end
 
+			if(sigLOAD | sigSTORE) begin
+			  	reg_result = oprnd1 + imm;
+			end
+			if(sigJAL) begin
+			  	nextPC = (imm + PC)&12'hFFF;
+				reg_result = PC + 4;
+			end
+			if(sigJALR) begin
+			  	nextPC = oprnd1 & 12'hFFF;
+				reg_result = ((oprnd1 + imm) >> 1) << 1;
+			end
+
+			if(sigBRANCH & bcond) begin
+			  	temp = imm + PC;
+				nextPC = temp[11:0];
+			end
+
+
+
+		end
+	end
 
 	//MEM
 	//reg isMEM = (stage == 3'b011);
@@ -255,22 +242,22 @@ module RISCV_TOP (
 	end
 
 	//WB
+
 	assign RF_WD = regWD;
 	always @ (*) begin
 	  	if(stage == 3'b100 & PVSWriteEn) begin //only for WB
-		  	//$display("oh!", result);
 		  	nextPC = PC + 4;
-			if(sigMemToReg & PVSWriteEn) begin
+			if(sigMemToReg) begin
 			  	regWD = regMemOutput;
 			end
-			else if(sigJAL & PVSWriteEn) begin
+			else if(sigJAL) begin
 			  	regWD = PC + 4;
 			end
-			else if(PVSWriteEn) begin
+			else begin
 			  	regWD = result;
 			end
 		end
-		//$display("rd, redWD", rd, regWD);
+		//$display(regWD);
 		//$display("stage, INST, nPC: ", stage, I_MEM_DI, nextPC, RSTn);
 	end
 
