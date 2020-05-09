@@ -4,13 +4,17 @@ module ALU (
 	input wire [6:0] subop,
     input wire [31:0] oprnd1,
     input wire [31:0] oprnd2,
-    output wire [31:0] res
+    output wire [31:0] res,
+    
+    input wire [4:0] rs1,
+    input wire [4:0] rs2,
+    input wire [4:0] rd
     );
 
     reg [31:0] result;
     assign res = result;
     always @ (*) begin
-        $display("op: ", op, oprnd1, oprnd2);
+        $display("op: %x, %x, %x|||%b", op, oprnd1, oprnd2, subop);
         if(activate) begin
             //$display("oprnd1, 2: ", oprnd1, oprnd2, subop);
             case(op)
@@ -46,6 +50,7 @@ module ALU (
                     result = oprnd1 & oprnd2;
                 end
             endcase
+            $display("result", result);
         end    
     end
 

@@ -89,6 +89,8 @@ module RISCV_TOP (
 	reg [31:0] regMemOutput;
 	reg [31:0] regWD;
 
+	reg [31:0] res;
+
 
 
 	initial begin
@@ -108,7 +110,7 @@ module RISCV_TOP (
 
 	always @ (posedge CLK) begin
 		if (RSTn) begin
-			//$display("nextInstr, PC: ", stage, PC);
+			$display("STAGE%d-%d", NUM_INST + 1, stage);
 			if(PVSWriteEn) begin // if all stage are done
 				PC <= nextPC;
 				I_MEM_ADDR <= nextPC;
@@ -138,7 +140,6 @@ module RISCV_TOP (
 	//IF
 	always @ (*) begin
 		if(stage == 3'b000) begin //only for IF
-			//$display("RSTn: ",RSTn);
 			//I_MEM_ADDR = PC;
 			IR = I_MEM_DI;
 		end
@@ -146,20 +147,66 @@ module RISCV_TOP (
 
 	//ID
 	wire isID = (stage == 3'b001);
-	INST_DECODE INST_DECODE(.INST(I_MEM_DI), .activate(isID), .opcode(opcode), .rs1(rs1), .rs2(rs2), .rd(rd), .funct3(funct3), .funct7(funct7), .immI(immI), .immS(immS), .immB(immB), .immU(immU), .immJ(immJ), .sigOpIMM(sigOpIMM), .sigOP(sigOP), .sigJAL(sigJAL), .sigJALR(sigJALR), .sigBRANCH(sigBRANCH), .sigLOAD(sigLOAD), .sigSTORE(sigSTORE), .sigALUSrc(sigALUSrc), .sigMemToReg(sigMemToReg), .RF_WE(RF_WE), .RF_RA1(RF_RA1), .RF_RA2(RF_RA2), .RF_WA1(RF_WA1), .RF_RD1(RF_RD1), .RF_RD2(RF_RD2), .oprnd2(oprnd2), .HALT(HALT), .writeEn(PVSWriteEn));
+	INST_DECODE INST_DECODE(.INST(I_MEM_DI), .activate(isID), .opcode(opcode), .rs1(rs1), .rs2(rs2), .rd(rd), .funct3(funct3), .funct7(funct7), .immI(immI), .immS(immS), .immB(immB), .immU(immU), .immJ(immJ), .sigOpIMM(sigOpIMM), .sigOP(sigOP), .sigJAL(sigJAL), .sigJALR(sigJALR), .sigBRANCH(sigBRANCH), .sigLOAD(sigLOAD), .sigSTORE(sigSTORE), .sigALUSrc(sigALUSrc), .sigMemToReg(sigMemToReg), .RF_WE(RF_WE), .RF_RA1(RF_RA1), .RF_RA2(RF_RA2), .RF_WA1(RF_WA1), .RF_RD1(RF_RD1), .RF_RD2(RF_RD2), .oprnd2(oprnd2), .oprnd1(oprnd1), .HALT(HALT), .writeEn(PVSWriteEn));
 
 
 	//Ex
 	//ALU for OP and OPIMM
 	//fix activate, oprnd2
+	//remove rs1, rs2
 	wire isALU = (stage == 3'b010);// &(sigOP| sigOpIMM);
-	ALU ALU(.activate(isALU), .op(funct3), .subop(funct7), .oprnd1(RF_RD1), .oprnd2(oprnd2), .res(result));
+	ALU ALU(.activate(isALU), .op(funct3), .subop(funct7), .oprnd1(oprnd1), .oprnd2(oprnd2), .res(result), .rs1(rs1), .rs2(rs2), .rd(rd));
 	
 
 	//deal with branch and jump
-	/*always @ (*) begin
+	always @ (*) begin // Branch
+		if(stage == 3'b010 & sigBRANCH) begin
+		  	case(funct3)
+				3'b000: begin // BEQ
+					res = (oprnd1 == oprnd2);
+				end
+				3'b010: begin // BNE
+					res = (oprnd1 != oprnd2);
+				end
+				3'b100: begin // BLT
+					res = ($signed(oprnd1) < $signed(oprnd2));
+				end
+				3'b101: begin // BGE
+					res = ($signed(oprnd1) >= $signed(oprnd2));
+					//$display("bcond: %x, oprnd1: %x, oprnd2: %x", bcond, oprnd1, RF_RD2);
+				end
+				3'b110: begin // BLTU
+					res = (oprnd1 < oprnd2);
+				end
+				3'b111: begin // BGEU
+					res = (oprnd1 >= oprnd2);
+				end
+			endcase
+		end
 
-	end*/
+		//store and load
+		if(stage == 3'b010 & (sigLOAD | sigSTORE)) begin
+		  	res = oprnd1 + imm;
+		end
+
+		if(stage == 3'b010 &sigJAL) begin
+			jmpPC = (imm + PC)&12'hFFF;
+			res = PC + 4;//modi
+		end
+		if(stage == 3'b010 &sigJALR) begin
+			res = ((oprnd1 + imm)>>1)<<1;
+			jmpPC = RF_RD1&12'hFFF;
+		end
+
+		if(stage == 3'b010 &sigBRANCH & bcond) begin
+			temp = imm + PC;//((imm<<1) + PC);
+			jmpPC = temp[11:0];
+		end
+
+	end
+	assign result = res;
+	assign bcond = result;
+
 
 	//MEM
 	//reg isMEM = (stage == 3'b011);
@@ -208,22 +255,22 @@ module RISCV_TOP (
 	end
 
 	//WB
-
 	assign RF_WD = regWD;
 	always @ (*) begin
-	  	if(stage == 3'b100) begin //only for WB
+	  	if(stage == 3'b100 & PVSWriteEn) begin //only for WB
+		  	//$display("oh!", result);
 		  	nextPC = PC + 4;
-			if(sigMemToReg) begin
+			if(sigMemToReg & PVSWriteEn) begin
 			  	regWD = regMemOutput;
 			end
-			else if(sigJAL) begin
+			else if(sigJAL & PVSWriteEn) begin
 			  	regWD = PC + 4;
 			end
-			else begin
+			else if(PVSWriteEn) begin
 			  	regWD = result;
 			end
 		end
-		//$display(regWD);
+		//$display("rd, redWD", rd, regWD);
 		//$display("stage, INST, nPC: ", stage, I_MEM_DI, nextPC, RSTn);
 	end
 
