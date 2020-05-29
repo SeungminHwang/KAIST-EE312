@@ -1,5 +1,5 @@
 `timescale 1ns/10ps
-`define NUM_TEST 17
+`define NUM_TEST 21
 `define TESTID_SIZE 5
 
 module TB_RISCV ();
@@ -7,6 +7,7 @@ module TB_RISCV ();
 	wire CLK;
 	wire RSTn;
 	//Memory Signals
+
 	wire I_MEM_CSN;
 	wire [31:0] I_MEM_DOUT;
 	wire [11:0] I_MEM_ADDR;
@@ -64,7 +65,7 @@ module TB_RISCV ();
 
 	//I-Memory
 	SP_SRAM #(
-		.ROMDATA ("./testcase/hex/forloop.hex"), //Initialize I-Memory
+		.ROMDATA ("C:\\Users\\jjeong\\lab_test\\11\\inst.hex"), //Initialize I-Memory
 		.AWIDTH  (10),
 		.SIZE    (1024)
 	) i_mem1 (
@@ -123,23 +124,28 @@ module TB_RISCV ();
 	reg [31:0] i;
 
 	initial begin
-		TestID[0] <= "1";		TestNumInst[0] <= 16'h0004;		TestAns[0] <= 16'h0eec;		TestPassed[0] <= 1'b0; 
-		TestID[1] <= "2";		TestNumInst[1] <= 16'h0006;		TestAns[1] <= 16'h0000;		TestPassed[1] <= 1'b0; 
-		TestID[2] <= "3";		TestNumInst[2] <= 16'h0008;		TestAns[2] <= 16'h0001;		TestPassed[2] <= 1'b0; 
-		TestID[3] <= "4";		TestNumInst[3] <= 16'h000a;		TestAns[3] <= 16'h0000;		TestPassed[3] <= 1'b0; 
-		TestID[4] <= "5";		TestNumInst[4] <= 16'h000c;		TestAns[4] <= 16'h0ef0;		TestPassed[4] <= 1'b0; 
-		TestID[5] <= "6";		TestNumInst[5] <= 16'h000e;		TestAns[5] <= 16'h0ed8;		TestPassed[5] <= 1'b0; 
-		TestID[6] <= "7";		TestNumInst[6] <= 16'h0010;		TestAns[6] <= 16'h0001;		TestPassed[6] <= 1'b0; 
-		TestID[7] <= "8";		TestNumInst[7] <= 16'h0012;		TestAns[7] <= 16'h0001;		TestPassed[7] <= 1'b0; 
-		TestID[8] <= "9";		TestNumInst[8] <= 16'h0014;		TestAns[8] <= 16'h0001;		TestPassed[8] <= 1'b0; 
-		TestID[9] <= "10";		TestNumInst[9] <= 16'h0016;		TestAns[9] <= 16'h0004;		TestPassed[9] <= 1'b0; 
-		TestID[10] <= "11";		TestNumInst[10] <= 16'h0021;	TestAns[10] <= 16'h0002;	TestPassed[10] <= 1'b0;
-		TestID[11] <= "12";		TestNumInst[11] <= 16'h002b;	TestAns[11] <= 16'h0004;	TestPassed[11] <= 1'b0;
-		TestID[12] <= "13";		TestNumInst[12] <= 16'h0031;	TestAns[12] <= 16'h0003;	TestPassed[12] <= 1'b0;
-		TestID[13] <= "14";		TestNumInst[13] <= 16'h0034;	TestAns[13] <= 16'h0004;	TestPassed[13] <= 1'b0;
-		TestID[14] <= "15";		TestNumInst[14] <= 16'h003c;	TestAns[14] <= 16'h0f00;	TestPassed[14] <= 1'b0;
-		TestID[15] <= "16";		TestNumInst[15] <= 16'h0042;	TestAns[15] <= 16'h0005;	TestPassed[15] <= 1'b0;
-		TestID[16] <= "17";		TestNumInst[16] <= 16'h0046;	TestAns[16] <= 16'h0000;	TestPassed[16] <= 1'b0;
+		TestID[0] <= "1";		TestNumInst[0] <= 16'h0001;		TestAns[0] <= 16'h0005;		TestPassed[0] <= 1'b0; 
+		TestID[1] <= "2";		TestNumInst[1] <= 16'h0002;		TestAns[1] <= 16'h0000;		TestPassed[1] <= 1'b0; 
+		TestID[2] <= "3";		TestNumInst[2] <= 16'h0003;		TestAns[2] <= 16'h0001;		TestPassed[2] <= 1'b0; 
+		TestID[3] <= "4";		TestNumInst[3] <= 16'h0004;		TestAns[3] <= 16'h0000;		TestPassed[3] <= 1'b0; 
+		TestID[4] <= "5";		TestNumInst[4] <= 16'h0005;		TestAns[4] <= 16'h0001;		TestPassed[4] <= 1'b0; 
+		TestID[5] <= "6";		TestNumInst[5] <= 16'h0006;		TestAns[5] <= 16'h0005;		TestPassed[5] <= 1'b0; 
+		TestID[6] <= "7";		TestNumInst[6] <= 16'h0007;		TestAns[6] <= 16'h0005;		TestPassed[6] <= 1'b0; 
+		TestID[7] <= "8";		TestNumInst[7] <= 16'h0008;		TestAns[7] <= 16'h000f;		TestPassed[7] <= 1'b0; 
+		TestID[8] <= "9";		TestNumInst[8] <= 16'h009;		TestAns[8] <= 16'h001e;		TestPassed[8] <= 1'b0; 
+		TestID[9] <= "10";		TestNumInst[9] <= 16'h00a;	TestAns[9] <= 16'h000f;	TestPassed[9] <= 1'b0; 
+		TestID[10] <= "11";		TestNumInst[10] <= 16'h00b;	TestAns[10] <= 16'h0002;	TestPassed[10] <= 1'b0; 
+		TestID[11] <= "12";		TestNumInst[11] <= 16'h00c;	TestAns[11] <= 16'h0007;	TestPassed[11] <= 1'b0; 
+		TestID[12] <= "13";		TestNumInst[12] <= 16'h00d;	TestAns[12] <= 16'h0002;	TestPassed[12] <= 1'b0; 
+		TestID[13] <= "14";		TestNumInst[13] <= 16'h000e;	TestAns[13] <= 16'h0014;	TestPassed[13] <= 1'b0; 
+		TestID[14] <= "15";		TestNumInst[14] <= 16'h000f;	TestAns[14] <= 16'h0000;	TestPassed[14] <= 1'b0; 
+		TestID[15] <= "16";		TestNumInst[15] <= 16'h0010;	TestAns[15] <= 16'h0000;	TestPassed[15] <= 1'b0; 
+
+		TestID[16] <= "17";		TestNumInst[16] <= 16'h0011;		TestAns[16] <= 16'h0000;		TestPassed[16] <= 1'b0; 
+		TestID[17] <= "18";		TestNumInst[17] <= 16'h0012;		TestAns[17] <= 16'h000a;		TestPassed[17] <= 1'b0; 
+		TestID[18] <= "19";		TestNumInst[18] <= 16'h0013;		TestAns[18] <= 16'h000a;		TestPassed[18] <= 1'b0; 
+		TestID[19] <= "20";		TestNumInst[19] <= 16'h0014;		TestAns[19] <= 16'h001e;		TestPassed[19] <= 1'b0; 
+		TestID[20] <= "21";		TestNumInst[20] <= 16'h0015;		TestAns[20] <= 16'h0014;		TestPassed[20] <= 1'b0; 
 	end
 
 	always @ (posedge CLK) begin
@@ -150,6 +156,7 @@ module TB_RISCV ();
 				if ((NUM_INST==TestNumInst[i]) & (TestPassed[i]==0)) begin
 					if (OUTPUT_PORT == TestAns[i]) begin
 						TestPassed[i] <= 1'b1;
+						$display("Test #%s has been passed", TestID[i]);
 					end
 					else begin
 						TestPassed[i] <= 1'b0;

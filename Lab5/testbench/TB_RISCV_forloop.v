@@ -64,7 +64,7 @@ module TB_RISCV ();
 
 	//I-Memory
 	SP_SRAM #(
-		.ROMDATA ("./testcase/hex/forloop.hex"), //Initialize I-Memory
+		.ROMDATA ("forloop.hex"), //Initialize I-Memory
 		.AWIDTH  (10),
 		.SIZE    (1024)
 	) i_mem1 (
@@ -133,13 +133,13 @@ module TB_RISCV ();
 		TestID[7] <= "8";		TestNumInst[7] <= 16'h0012;		TestAns[7] <= 16'h0001;		TestPassed[7] <= 1'b0; 
 		TestID[8] <= "9";		TestNumInst[8] <= 16'h0014;		TestAns[8] <= 16'h0001;		TestPassed[8] <= 1'b0; 
 		TestID[9] <= "10";		TestNumInst[9] <= 16'h0016;		TestAns[9] <= 16'h0004;		TestPassed[9] <= 1'b0; 
-		TestID[10] <= "11";		TestNumInst[10] <= 16'h0021;	TestAns[10] <= 16'h0002;	TestPassed[10] <= 1'b0;
-		TestID[11] <= "12";		TestNumInst[11] <= 16'h002b;	TestAns[11] <= 16'h0004;	TestPassed[11] <= 1'b0;
-		TestID[12] <= "13";		TestNumInst[12] <= 16'h0031;	TestAns[12] <= 16'h0003;	TestPassed[12] <= 1'b0;
-		TestID[13] <= "14";		TestNumInst[13] <= 16'h0034;	TestAns[13] <= 16'h0004;	TestPassed[13] <= 1'b0;
-		TestID[14] <= "15";		TestNumInst[14] <= 16'h003c;	TestAns[14] <= 16'h0f00;	TestPassed[14] <= 1'b0;
-		TestID[15] <= "16";		TestNumInst[15] <= 16'h0042;	TestAns[15] <= 16'h0005;	TestPassed[15] <= 1'b0;
-		TestID[16] <= "17";		TestNumInst[16] <= 16'h0046;	TestAns[16] <= 16'h0000;	TestPassed[16] <= 1'b0;
+		TestID[10] <= "11";		TestNumInst[10] <= 16'h0021;	TestAns[10] <= 16'h0002;	TestPassed[10] <= 1'b0; 
+		TestID[11] <= "12";		TestNumInst[11] <= 16'h002b;	TestAns[11] <= 16'h0004;	TestPassed[11] <= 1'b0; 
+		TestID[12] <= "13";		TestNumInst[12] <= 16'h0031;	TestAns[12] <= 16'h0003;	TestPassed[12] <= 1'b0; 
+		TestID[13] <= "14";		TestNumInst[13] <= 16'h0034;	TestAns[13] <= 16'h0004;	TestPassed[13] <= 1'b0; 
+		TestID[14] <= "15";		TestNumInst[14] <= 16'h003c;	TestAns[14] <= 16'h0f00;	TestPassed[14] <= 1'b0; 
+		TestID[15] <= "16";		TestNumInst[15] <= 16'h0042;	TestAns[15] <= 16'h0005;	TestPassed[15] <= 1'b0; 
+		TestID[16] <= "17";		TestNumInst[16] <= 16'h0046;	TestAns[16] <= 16'h0000;	TestPassed[16] <= 1'b0; 
 	end
 
 	always @ (posedge CLK) begin

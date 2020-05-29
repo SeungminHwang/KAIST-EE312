@@ -64,7 +64,7 @@ module TB_RISCV ();
 
 	//I-Memory
 	SP_SRAM #(
-		.ROMDATA ("./testcase/hex/sort.hex"), //Initialize I-Memory
+		.ROMDATA ("sort.hex"), //Initialize I-Memory
 		.AWIDTH  (10),
 		.SIZE    (1024)
 	) i_mem1 (
@@ -123,7 +123,7 @@ module TB_RISCV ();
 	reg [31:0] i;
 
 	initial begin
-		TestID[0] <= "1";		TestNumInst[0] <= 16'h0004;		TestAns[0] <= 16'h0f00;		TestPassed[0] <= 1'b0;
+		TestID[0] <= "1";		TestNumInst[0] <= 16'h0004;		TestAns[0] <= 16'h0f00;		TestPassed[0] <= 1'b0; 
 		TestID[1] <= "2";		TestNumInst[1] <= 16'h0006;		TestAns[1] <= 16'h0018;		TestPassed[1] <= 1'b0; 
 		TestID[2] <= "3";		TestNumInst[2] <= 16'h0008;		TestAns[2] <= 16'h001d;		TestPassed[2] <= 1'b0; 
 		TestID[3] <= "4";		TestNumInst[3] <= 16'h000a;		TestAns[3] <= 16'h001e;		TestPassed[3] <= 1'b0; 

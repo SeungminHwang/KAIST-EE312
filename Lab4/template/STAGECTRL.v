@@ -2,7 +2,8 @@ module STAGECTRL(
     input wire [2:0] currentStage,
     input wire [6:0] opcode,
     output wire [2:0] nextStage,
-    output wire PVSWriteEn
+    output wire PVSWriteEn,
+    input wire rstn
     );
 //stage description
 /*
@@ -19,6 +20,7 @@ assign nextStage = newStage;
 
 always @ (*) begin
     //$display("current stage: ", currentStage, opcode);
+    if(rstn)begin
     case(currentStage)
         3'b000: begin // IF
             newStage = 3'b001;
@@ -37,9 +39,9 @@ always @ (*) begin
                 newStage = 3'b011; //goto MEM
                 allowPVS = 0;
             end
-            else if (opcode == 7'b1100111) begin // JAL or JALR
-                newStage = 3'b000;
-                allowPVS = 1;
+            else if (opcode == 7'b1100111 | opcode == 7'b1101111) begin // JAL or JALR
+                newStage = 3'b100;
+                allowPVS = 0;
             end
             else begin // Branch or JAL
                 newStage = 3'b000; // goto IF
@@ -60,7 +62,12 @@ always @ (*) begin
             newStage = 3'b000;
             allowPVS = 1;
         end
+        3'b101: begin
+            newStage = 3'b000;
+            allowPVS = 0;
+        end
     endcase
+    end
 end
 
 endmodule

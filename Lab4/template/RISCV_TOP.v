@@ -79,6 +79,10 @@ module RISCV_TOP (
 	wire [31:0] result;
 	wire [31:0] oprnd1;
 	wire [31:0] oprnd2;
+	reg [31:0] reg_oprnd1;
+	reg [31:0] reg_oprnd2;
+	//assign oprnd1 = reg_oprnd1;
+	//assign oprnd2 = reg_oprnd2;
 
 	reg [11:0] jmpPC; // PC produced by JMP/BRANCH
 	reg [31:0] temp;
@@ -95,7 +99,7 @@ module RISCV_TOP (
 
 	initial begin
 		PC <= 0;
-		stage <= 0;
+		stage <= 0;//3'b101;
 	end
 
 	initial begin
@@ -109,6 +113,7 @@ module RISCV_TOP (
 	end
 
 	always @ (posedge CLK) begin
+		$display("RSTN", RSTn);
 		if (RSTn) begin
 			//$display("nextInstr, PC: ", stage, PC);
 			if(PVSWriteEn) begin // if all stage are done
@@ -122,6 +127,7 @@ module RISCV_TOP (
 		end
 		else begin
 			I_MEM_ADDR <= PC;
+			stage <= 0;
 			//$display("IMEMADDR, stage: ",I_MEM_ADDR, stage, IR);
 		end
 	end
@@ -134,7 +140,7 @@ module RISCV_TOP (
 
 	//micro control unit
 	//wire [6:0] temp1 = I_MEM_ADDR[6:0];
-	STAGECTRL STAGECTRL(.currentStage(stage), .opcode(opcode), .nextStage(nextStage), .PVSWriteEn(PVSWriteEn));
+	STAGECTRL STAGECTRL(.currentStage(stage), .opcode(opcode), .nextStage(nextStage), .PVSWriteEn(PVSWriteEn), .rstn(RSTn));
 
 
 	//IF
@@ -147,15 +153,54 @@ module RISCV_TOP (
 	end
 
 	//ID
-	wire isID = (stage == 3'b001);
+	wire isID = 1;//(stage == 3'b001);
 	INST_DECODE INST_DECODE(.INST(I_MEM_DI), .activate(isID), .opcode(opcode), .rs1(rs1), .rs2(rs2), .rd(rd), .funct3(funct3), .funct7(funct7), .immI(immI), .immS(immS), .immB(immB), .immU(immU), .immJ(immJ), .sigOpIMM(sigOpIMM), .sigOP(sigOP), .sigJAL(sigJAL), .sigJALR(sigJALR), .sigBRANCH(sigBRANCH), .sigLOAD(sigLOAD), .sigSTORE(sigSTORE), .sigALUSrc(sigALUSrc), .sigMemToReg(sigMemToReg), .RF_WE(RF_WE), .RF_RA1(RF_RA1), .RF_RA2(RF_RA2), .RF_WA1(RF_WA1), .RF_RD1(RF_RD1), .RF_RD2(RF_RD2), .oprnd2(oprnd2), .oprnd1(oprnd1), .HALT(HALT), .writeEn(PVSWriteEn));
+
+	//control signals
+	/*
+	assign sigOpIMM =  (opcode == 7'b0010011); // I type
+	assign sigLUI =  (opcode == 7'b0110111);
+	assign sigAUIPC =  ( opcode == 7'b0010111 );
+	assign sigOP =  (opcode == 7'b0110011); //R type
+	assign sigJAL =  (opcode == 7'b1101111); // J type
+	assign sigJALR =  ( opcode == 7'b1100111 ); // Itype
+	assign sigBRANCH =  (opcode == 7'b1100011); // B type
+	assign sigLOAD =  (opcode == 7'b0000011); // I type
+	assign sigSTORE =  (opcode == 7'b0100011); // S type
+
+	assign sigALUSrc =  (sigOP) | (sigBRANCH); // 1 for "use RF_RD1" 0 for immediate
+	assign sigMemToReg =  sigLOAD;
+	
+	assign RF_WE = ((sigJAL) | (sigJALR) | (sigLOAD) | (sigOP) | (sigOpIMM));
+	assign RF_RA1 = rs1;
+	assign RF_RA2 = rs2;
+	assign RF_WA1 = rd;
+	*/
+	
+
+
 
 
 	//Ex
 	//ALU for OP and OPIMM
 	//fix activate, oprnd2
 	wire isALU = (stage == 3'b010);// &(sigOP| sigOpIMM);
-	ALU ALU(.activate(isALU), .op(funct3), .subop(funct7), .oprnd1(oprnd1), .oprnd2(oprnd2), .res(result));
+	/*
+	always @ (*) begin
+		if(sigOpIMM) reg_oprnd2 = immI;
+		else reg_oprnd2 = oprnd2;
+	end*/
+	wire [31:0] aluop2;
+	assign aluop2 = oprnd2;
+	always @ (*) begin
+		$display("stg %x-%x, PC: %x, op1: %x, op2: %x, result: %x", NUM_INST + 1,stage,PC, oprnd1, aluop2, result);
+		$display("test: %x", IR);
+		if(stage == 3'b001) begin
+			if(sigOpIMM) reg_oprnd2 = immI;
+			if(sigOP) reg_oprnd2 = oprnd2;
+		end
+	end
+	ALU ALU(.activate(isALU), .op(funct3), .subop(funct7), .oprnd1(oprnd1), .oprnd2(aluop2), .res(result));
 	
 
 	//deal with branch and jump
@@ -175,13 +220,15 @@ module RISCV_TOP (
 
 			if(sigLOAD | sigSTORE) begin
 			  	reg_result = oprnd1 + imm;
+				nextPC = PC + 4;
 			end
 			if(sigJAL) begin
-			  	nextPC = (imm + PC)&12'hFFF;
+			  	jmpPC = (imm + PC)&12'hFFF;
 				reg_result = PC + 4;
+				//$display("you got it!:", reg_result);
 			end
 			if(sigJALR) begin
-			  	nextPC = oprnd1 & 12'hFFF;
+			  	jmpPC = oprnd1 & 12'hFFF;
 				reg_result = ((oprnd1 + imm) >> 1) << 1;
 			end
 
@@ -245,13 +292,16 @@ module RISCV_TOP (
 
 	assign RF_WD = regWD;
 	always @ (*) begin
-	  	if(stage == 3'b100 & PVSWriteEn) begin //only for WB
+	  	if((stage == 4)) begin //only for WB
+		  $display("reg_result", sigJAL, sigMemToReg, PVSWriteEn);
 		  	nextPC = PC + 4;
+			  $display("isItOkay?", sigJAL);
 			if(sigMemToReg) begin
 			  	regWD = regMemOutput;
 			end
 			else if(sigJAL) begin
-			  	regWD = PC + 4;
+			  	regWD = reg_result;
+				$display("good!", reg_result);
 			end
 			else begin
 			  	regWD = result;
@@ -261,6 +311,15 @@ module RISCV_TOP (
 		//$display("stage, INST, nPC: ", stage, I_MEM_DI, nextPC, RSTn);
 	end
 
+	always @ (*) begin
+		if(sigJAL | sigJALR | (sigBRANCH & bcond)) begin
+			nextPC = jmpPC;
+		end
+		else begin
+			$display("no!", sigJAL);
+			nextPC = PC + 4;
+		end
+	end
 
 
 
