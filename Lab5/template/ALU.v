@@ -1,6 +1,6 @@
 module ALU (
     input wire activate,
-    input wire [3:0] op, // funct3
+    input wire [2:0] op, // funct3
     input wire [6:0] subop, // funct7
     input wire [31:0] op1,
     input wire [31:0] op2,
